@@ -1,1 +1,0 @@
-# my-animated-contribution-calandar

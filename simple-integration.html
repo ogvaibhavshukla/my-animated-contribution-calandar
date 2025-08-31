@@ -1,0 +1,731 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Animated Contribution Calendar</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&family=Geist+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        /* All CSS embedded for easy copy-paste */
+        :root {
+            --bg-light: #ffffff;
+            --bg-dark: #070707;
+            --text-light: #1f2937;
+            --text-dark: #f0f6fc;
+            --border-light: #d1d5db;
+            --border-dark: #201f22;
+            --container-light: #ffffff;
+            --container-dark: #070707;
+            --square-empty-light: #ebedf0;
+            --square-empty-dark: #201f22;
+            --toggle-bg-light: #e5e7eb;
+            --toggle-bg-dark: #201f22;
+            --blue-light: #3b82f6;
+            --blue-dark: #60a5fa;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        html {
+            transition: background-color 0.5s ease-in-out;
+        }
+
+        body {
+            font-family: 'Geist', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background-color: var(--bg-light);
+            color: var(--text-light);
+            transition: background-color 0.5s ease-in-out, color 0.5s ease-in-out;
+            min-height: 100vh;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+        }
+
+        body.dark {
+            background-color: var(--bg-dark);
+            color: var(--text-dark);
+        }
+
+        .container {
+            padding: 1.5rem;
+            max-width: 72rem;
+            margin: 0 auto;
+        }
+
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 0.75rem;
+        }
+
+        .title {
+            font-size: 1.5rem;
+            font-weight: 600;
+            line-height: 2rem;
+            user-select: none;
+            transition: color 0.5s ease-in-out;
+            margin-bottom: 0.5rem;
+            letter-spacing: -0.14em;
+            font-variation-settings: 'wght' 600;
+        }
+
+        .letter {
+            cursor: pointer;
+            transition: color 0.5s ease-in-out;
+        }
+
+        .letter:hover {
+            color: var(--blue-light);
+        }
+
+        .letter.active {
+            color: var(--blue-light);
+        }
+
+        body.dark .letter:hover {
+            color: var(--blue-dark);
+        }
+
+        body.dark .letter.active {
+            color: var(--blue-dark);
+        }
+
+        .dark-mode-toggle {
+            padding: 8px;
+            border-radius: 8px;
+            border: none;
+            background-color: var(--toggle-bg-light);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.5s ease-in-out;
+        }
+
+        .dark-mode-toggle:hover {
+            opacity: 0.8;
+        }
+
+        body.dark .dark-mode-toggle {
+            background-color: var(--toggle-bg-dark);
+        }
+
+        .dark-mode-toggle svg {
+            width: 20px;
+            height: 20px;
+            transition: color 0.5s ease-in-out;
+        }
+
+        .sun-icon {
+            color: #eab308;
+            display: none;
+        }
+
+        .moon-icon {
+            color: #6b7280;
+            display: block;
+        }
+
+        body.dark .sun-icon {
+            display: block;
+        }
+
+        body.dark .moon-icon {
+            display: none;
+        }
+
+        .calendar-container {
+            background-color: var(--container-light);
+            border-radius: 8px;
+            margin-top: 12px;
+            width: fit-content;
+            max-width: 100%;
+            overflow-x: auto;
+            transition: background-color 0.5s ease-in-out;
+        }
+
+        body.dark .calendar-container {
+            background-color: var(--container-dark);
+        }
+
+        .grid-container {
+            display: flex;
+            border: 2px solid var(--border-light);
+            border-radius: 8px;
+            padding: 8px;
+            gap: 3px;
+            background-color: var(--container-light);
+            transition: all 0.5s ease-in-out;
+        }
+
+        body.dark .grid-container {
+            border-color: var(--border-dark);
+            background-color: var(--container-dark);
+        }
+
+        .column {
+            display: flex;
+            flex-direction: column;
+            gap: 3px;
+        }
+
+        .square {
+            width: 15px;
+            height: 15px;
+            background-color: var(--square-empty-light);
+            border-radius: 2.5px;
+            transition: background-color 0.5s ease, transform 0.2s ease;
+            cursor: pointer;
+        }
+
+        body.dark .square {
+            background-color: var(--square-empty-dark);
+        }
+
+        /* Light mode contribution levels */
+        .square.alive-1 {
+            background-color: #9be9a8;
+        }
+
+        .square.alive-2 {
+            background-color: #40c463;
+        }
+
+        .square.alive-3 {
+            background-color: #30a14e;
+        }
+
+        .square.alive-4 {
+            background-color: #216e39;
+        }
+
+        /* Dark mode contribution levels */
+        body.dark .square.alive-1 {
+            background-color: #0e4429;
+        }
+
+        body.dark .square.alive-2 {
+            background-color: #006d32;
+        }
+
+        body.dark .square.alive-3 {
+            background-color: #26a641;
+        }
+
+        body.dark .square.alive-4 {
+            background-color: #39d353;
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                padding: 1rem;
+            }
+            
+            .title {
+                font-size: 1.25rem;
+                line-height: 1.75rem;
+            }
+            
+            .square {
+                width: 12px;
+                height: 12px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1 class="title" id="title">
+                <span class="letter" data-pattern="gameOfLife" data-index="0">A</span>
+                <span class="letter" data-pattern="noise" data-index="1">c</span>
+                <span class="letter" data-pattern="wave" data-index="2">t</span>
+                <span class="letter" data-pattern="spiral" data-index="3">i</span>
+                <span class="letter" data-pattern="rule30" data-index="4">v</span>
+                <span class="letter" data-pattern="rain" data-index="5">i</span>
+                <span class="letter" data-pattern="ripple" data-index="6">t</span>
+                <span class="letter" data-pattern="gameOfLife" data-index="7">y</span>
+            </h1>
+            <button class="dark-mode-toggle" id="darkModeToggle" aria-label="Toggle dark mode">
+                <svg class="sun-icon" viewBox="0 0 20 20" fill="currentColor">
+                    <path fill-rule="evenodd" d="M10 2a1 1 0 011 1v1a1 1 0 11-2 0V3a1 1 0 011-1zm4 8a4 4 0 11-8 0 4 4 0 018 0zm-.464 4.95l.707.707a1 1 0 001.414-1.414l-.707-.707a1 1 0 00-1.414 1.414zm2.12-10.607a1 1 0 010 1.414l-.706.707a1 1 0 11-1.414-1.414l.707-.707a1 1 0 011.414 0zM17 11a1 1 0 100-2h-1a1 1 0 100 2h1zm-7 4a1 1 0 011 1v1a1 1 0 11-2 0v-1a1 1 0 011-1zM5.05 6.464A1 1 0 106.465 5.05l-.708-.707a1 1 0 00-1.414 1.414l.707.707zm1.414 8.486l-.707.707a1 1 0 01-1.414-1.414l.707-.707a1 1 0 011.414 1.414zM4 11a1 1 0 100-2H3a1 1 0 000 2h1z" clip-rule="evenodd"/>
+                </svg>
+                <svg class="moon-icon" viewBox="0 0 20 20" fill="currentColor">
+                    <path d="M17.293 13.293A8 8 0 016.707 2.707a8.001 8.001 0 1010.586 10.586z"/>
+                </svg>
+            </button>
+        </div>
+        
+        <div class="calendar-container">
+            <div class="grid-container" id="gridContainer">
+                <!-- Grid will be generated by JavaScript -->
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // SIMPLE VERSION - NO GITHUB API, JUST ANIMATIONS
+        // Configuration
+        const CONFIG = {
+            GITHUB_USERNAME: 'ogvaibhavshukla',
+            ENABLE_GITHUB_API: false, // Set to true if you want to add GitHub API later
+            GITHUB_TOKEN: '', // Add your token here if enabling API
+        };
+
+        class ContributionCalendar {
+            constructor(username = CONFIG.GITHUB_USERNAME) {
+                this.ROWS = 7;
+                this.COLS = 52;
+                this.GAP_PX = 3;
+                this.SQUARE_PX = 15;
+                this.username = username;
+                
+                // Pattern types
+                this.PATTERNS = {
+                    GAME_OF_LIFE: 'gameOfLife',
+                    RIPPLE: 'ripple',
+                    WAVE: 'wave',
+                    RAIN: 'rain',
+                    SPIRAL: 'spiral',
+                    NOISE: 'noise',
+                    RULE30: 'rule30'
+                };
+
+                // Animation state
+                this.grid = this.createEmptyGrid();
+                this.isRunning = false;
+                this.generation = 0;
+                this.currentPattern = this.PATTERNS.GAME_OF_LIFE;
+                this.patternState = {};
+                this.animationSpeed = 150;
+                this.maxGenerations = 500;
+                this.animationFrame = null;
+                this.lastUpdateTime = 0;
+                this.activeLetterIndex = null;
+                this.baselineGrid = null;
+
+                // Pattern mapping for letters
+                this.animateLetterPatterns = [
+                    this.PATTERNS.GAME_OF_LIFE, // A
+                    this.PATTERNS.NOISE,        // c
+                    this.PATTERNS.WAVE,         // t
+                    this.PATTERNS.SPIRAL,       // i
+                    this.PATTERNS.RULE30,       // v
+                    this.PATTERNS.RAIN,         // i
+                    this.PATTERNS.RIPPLE,       // t
+                    this.PATTERNS.GAME_OF_LIFE  // y
+                ];
+
+                this.init();
+            }
+
+            createEmptyGrid() {
+                return new Array(this.ROWS).fill(0).map(() => new Array(this.COLS).fill(0));
+            }
+
+            createRandomGrid() {
+                return new Array(this.ROWS).fill(0).map(() => 
+                    new Array(this.COLS).fill(0).map(() => Math.random() > 0.7 ? 1 : 0)
+                );
+            }
+
+            init() {
+                this.setupDOM();
+                this.setupEventListeners();
+                this.renderGrid();
+                
+                // Initialize with random grid
+                this.grid = this.createRandomGrid();
+                this.updateGridDisplay();
+            }
+
+            setupDOM() {
+                const container = document.getElementById('gridContainer');
+                container.innerHTML = '';
+
+                for (let col = 0; col < this.COLS; col++) {
+                    const column = document.createElement('div');
+                    column.className = 'column';
+                    column.setAttribute('data-col', col);
+
+                    for (let row = 0; row < this.ROWS; row++) {
+                        const square = document.createElement('div');
+                        square.className = 'square';
+                        square.setAttribute('data-row', row);
+                        square.setAttribute('data-col', col);
+                        square.title = `Cell (${row}, ${col}): No contributions`;
+                        column.appendChild(square);
+                    }
+
+                    container.appendChild(column);
+                }
+            }
+
+            setupEventListeners() {
+                // Dark mode toggle
+                const darkModeToggle = document.getElementById('darkModeToggle');
+                darkModeToggle.addEventListener('click', this.toggleDarkMode.bind(this));
+
+                // Letter click handlers
+                const letters = document.querySelectorAll('.letter');
+                letters.forEach((letter, index) => {
+                    letter.addEventListener('click', () => this.handleLetterClick(index));
+                });
+
+                // Initialize dark mode from localStorage
+                const savedTheme = localStorage.getItem('contribution-calendar-theme');
+                if (savedTheme === 'dark' || (!savedTheme && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+                    document.body.classList.add('dark');
+                }
+            }
+
+            toggleDarkMode() {
+                document.body.classList.toggle('dark');
+                const isDark = document.body.classList.contains('dark');
+                localStorage.setItem('contribution-calendar-theme', isDark ? 'dark' : 'light');
+            }
+
+            handleLetterClick(letterIndex) {
+                const newPattern = this.animateLetterPatterns[letterIndex];
+
+                if (!this.isRunning) {
+                    this.baselineGrid = this.grid.map(row => [...row]);
+                    this.changePattern(newPattern);
+                    this.startAnimation();
+                    this.setActiveLetterIndex(letterIndex);
+                    return;
+                }
+
+                if (this.activeLetterIndex === letterIndex) {
+                    this.stopAnimation();
+                    if (this.baselineGrid) {
+                        this.grid = this.baselineGrid.map(row => [...row]);
+                        this.updateGridDisplay();
+                    }
+                    this.setActiveLetterIndex(null);
+                    return;
+                }
+
+                this.changePattern(newPattern);
+                this.setActiveLetterIndex(letterIndex);
+            }
+
+            setActiveLetterIndex(index) {
+                const letters = document.querySelectorAll('.letter');
+                letters.forEach((letter, i) => {
+                    letter.classList.toggle('active', i === index);
+                });
+                this.activeLetterIndex = index;
+            }
+
+            changePattern(newPattern) {
+                this.currentPattern = newPattern;
+                this.generation = 0;
+                this.patternState = {};
+
+                if (newPattern === this.PATTERNS.GAME_OF_LIFE || newPattern === this.PATTERNS.NOISE) {
+                    this.grid = this.createRandomGrid();
+                } else if (newPattern === this.PATTERNS.RULE30) {
+                    this.grid = this.createEmptyGrid();
+                    this.grid[Math.floor(this.ROWS / 2)][Math.floor(this.COLS / 2)] = 1;
+                } else {
+                    this.grid = this.createEmptyGrid();
+                }
+
+                this.updateGridDisplay();
+            }
+
+            startAnimation() {
+                this.isRunning = true;
+                this.lastUpdateTime = performance.now();
+                this.animate();
+            }
+
+            stopAnimation() {
+                this.isRunning = false;
+                if (this.animationFrame) {
+                    cancelAnimationFrame(this.animationFrame);
+                }
+            }
+
+            animate() {
+                if (!this.isRunning) return;
+
+                const now = performance.now();
+                const elapsed = now - this.lastUpdateTime;
+
+                if (elapsed > this.animationSpeed) {
+                    this.lastUpdateTime = now - (elapsed % this.animationSpeed);
+
+                    const { newGrid, hasChanged } = this.executePattern(this.grid, this.currentPattern, this.patternState);
+
+                    if (this.currentPattern === this.PATTERNS.GAME_OF_LIFE && !hasChanged) {
+                        this.stopAnimation();
+                        return;
+                    }
+
+                    if (this.generation >= this.maxGenerations) {
+                        this.stopAnimation();
+                        return;
+                    }
+
+                    this.grid = newGrid;
+                    this.generation++;
+                    this.updateGridDisplay();
+                }
+
+                this.animationFrame = requestAnimationFrame(() => this.animate());
+            }
+
+            // Include all the pattern methods here...
+            executePattern(currentGrid, pattern, state) {
+                switch (pattern) {
+                    case this.PATTERNS.GAME_OF_LIFE:
+                        return this.gameOfLifeStep(currentGrid);
+                    case this.PATTERNS.RIPPLE:
+                        return this.rippleStep(currentGrid, state);
+                    case this.PATTERNS.WAVE:
+                        return this.waveStep(currentGrid, state);
+                    case this.PATTERNS.RAIN:
+                        return this.rainStep(currentGrid, state);
+                    case this.PATTERNS.SPIRAL:
+                        return this.spiralStep(currentGrid, state);
+                    case this.PATTERNS.NOISE:
+                        return this.noiseStep(currentGrid);
+                    case this.PATTERNS.RULE30:
+                        return this.rule30Step(currentGrid);
+                    default:
+                        return { newGrid: currentGrid, hasChanged: false };
+                }
+            }
+
+            // Game of Life logic
+            countNeighbors(grid, row, col) {
+                let count = 0;
+                const directions = [
+                    [-1, -1], [-1, 0], [-1, 1],
+                    [0, -1],           [0, 1],
+                    [1, -1],  [1, 0],  [1, 1]
+                ];
+
+                for (const [dr, dc] of directions) {
+                    const newRow = row + dr;
+                    const newCol = col + dc;
+                    if (newRow >= 0 && newRow < this.ROWS && newCol >= 0 && newCol < this.COLS) {
+                        count += grid[newRow][newCol];
+                    }
+                }
+                return count;
+            }
+
+            gameOfLifeStep(currentGrid) {
+                const newGrid = this.createEmptyGrid();
+                let hasChanged = false;
+
+                for (let row = 0; row < this.ROWS; row++) {
+                    for (let col = 0; col < this.COLS; col++) {
+                        const neighbors = this.countNeighbors(currentGrid, row, col);
+                        const currentCell = currentGrid[row][col];
+
+                        if (currentCell === 1) {
+                            newGrid[row][col] = neighbors === 2 || neighbors === 3 ? 1 : 0;
+                        } else {
+                            newGrid[row][col] = neighbors === 3 ? 1 : 0;
+                        }
+
+                        if (newGrid[row][col] !== currentCell) {
+                            hasChanged = true;
+                        }
+                    }
+                }
+
+                return { newGrid, hasChanged };
+            }
+
+            // Wave Pattern
+            waveStep(currentGrid, state) {
+                const newGrid = this.createEmptyGrid();
+                const time = state.time || 0;
+
+                for (let row = 0; row < this.ROWS; row++) {
+                    for (let col = 0; col < this.COLS; col++) {
+                        const wave1 = Math.sin(col * 0.2 + time * 0.1);
+                        const wave2 = Math.sin(row * 0.3 + time * 0.15);
+                        const combined = (wave1 + wave2) / 2;
+
+                        newGrid[row][col] = combined > 0.3 ? 1 : 0;
+                    }
+                }
+
+                this.patternState = { time: time + 1 };
+                return { newGrid, hasChanged: true };
+            }
+
+            // Add other pattern methods as needed...
+            rippleStep(currentGrid, state) {
+                const newGrid = this.createEmptyGrid();
+                const { ripples = [] } = state;
+
+                const newRipples = [...ripples];
+                if (Math.random() < 0.05) {
+                    newRipples.push({
+                        centerRow: Math.floor(Math.random() * this.ROWS),
+                        centerCol: Math.floor(Math.random() * this.COLS),
+                        radius: 0,
+                        maxRadius: Math.random() * 15 + 5
+                    });
+                }
+
+                for (let i = newRipples.length - 1; i >= 0; i--) {
+                    const ripple = newRipples[i];
+                    ripple.radius += 0.5;
+
+                    if (ripple.radius > ripple.maxRadius) {
+                        newRipples.splice(i, 1);
+                        continue;
+                    }
+
+                    for (let row = 0; row < this.ROWS; row++) {
+                        for (let col = 0; col < this.COLS; col++) {
+                            const distance = Math.sqrt(
+                                Math.pow(row - ripple.centerRow, 2) + Math.pow(col - ripple.centerCol, 2)
+                            );
+
+                            if (Math.abs(distance - ripple.radius) < 1) {
+                                newGrid[row][col] = 1;
+                            }
+                        }
+                    }
+                }
+
+                this.patternState = { ripples: newRipples };
+                return { newGrid, hasChanged: true };
+            }
+
+            noiseStep(currentGrid) {
+                const newGrid = this.createEmptyGrid();
+
+                for (let row = 0; row < this.ROWS; row++) {
+                    for (let col = 0; col < this.COLS; col++) {
+                        newGrid[row][col] = Math.random() > 0.8 ? 1 : 0;
+                    }
+                }
+
+                return { newGrid, hasChanged: true };
+            }
+
+            spiralStep(currentGrid, state) {
+                const newGrid = this.createEmptyGrid();
+                const time = state.time || 0;
+                const centerRow = this.ROWS / 2;
+                const centerCol = this.COLS / 2;
+
+                for (let row = 0; row < this.ROWS; row++) {
+                    for (let col = 0; col < this.COLS; col++) {
+                        const dx = col - centerCol;
+                        const dy = row - centerRow;
+                        const angle = Math.atan2(dy, dx);
+                        const distance = Math.sqrt(dx * dx + dy * dy);
+
+                        const spiralValue = Math.sin(angle * 3 + distance * 0.5 - time * 0.2);
+                        newGrid[row][col] = spiralValue > 0.5 ? 1 : 0;
+                    }
+                }
+
+                this.patternState = { time: time + 1 };
+                return { newGrid, hasChanged: true };
+            }
+
+            rainStep(currentGrid, state) {
+                const newGrid = [...currentGrid.map(row => [...row])];
+
+                for (let col = 0; col < this.COLS; col++) {
+                    if (Math.random() < 0.05) {
+                        newGrid[0][col] = 1;
+                    }
+                }
+
+                for (let row = this.ROWS - 1; row > 0; row--) {
+                    for (let col = 0; col < this.COLS; col++) {
+                        if (currentGrid[row - 1][col] === 1) {
+                            newGrid[row][col] = 1;
+                            newGrid[row - 1][col] = 0;
+                        }
+                    }
+                }
+
+                for (let col = 0; col < this.COLS; col++) {
+                    if (Math.random() < 0.3) {
+                        newGrid[this.ROWS - 1][col] = 0;
+                    }
+                }
+
+                return { newGrid, hasChanged: true };
+            }
+
+            rule30Step(currentGrid) {
+                const newGrid = [...currentGrid.map(row => [...row])];
+                const middleRow = Math.floor(this.ROWS / 2);
+                const currentRow = currentGrid[middleRow];
+
+                for (let col = 1; col < this.COLS - 1; col++) {
+                    const left = currentRow[col - 1];
+                    const center = currentRow[col];
+                    const right = currentRow[col + 1];
+
+                    const pattern = (left << 2) | (center << 1) | right;
+                    newGrid[middleRow][col] = [0, 1, 1, 1, 1, 0, 0, 0][pattern];
+                }
+
+                for (let row = 0; row < this.ROWS; row++) {
+                    if (row !== middleRow) {
+                        for (let col = this.COLS - 1; col > 0; col--) {
+                            newGrid[row][col] = currentGrid[row][col - 1];
+                        }
+                        newGrid[row][0] = 0;
+                    }
+                }
+
+                return { newGrid, hasChanged: true };
+            }
+
+            updateGridDisplay() {
+                for (let row = 0; row < this.ROWS; row++) {
+                    for (let col = 0; col < this.COLS; col++) {
+                        const square = document.querySelector(`[data-row="${row}"][data-col="${col}"]`);
+                        if (square) {
+                            const value = this.grid[row][col];
+                            
+                            square.classList.remove('alive-1', 'alive-2', 'alive-3', 'alive-4');
+                            
+                            if (value > 0) {
+                                if (value === 1) square.classList.add('alive-1');
+                                else if (value >= 2 && value <= 3) square.classList.add('alive-2');
+                                else if (value >= 4 && value <= 6) square.classList.add('alive-3');
+                                else square.classList.add('alive-4');
+                            }
+                            
+                            square.title = `Cell (${row}, ${col}): ${value > 0 ? `${value} contribution${value > 1 ? 's' : ''}` : 'No contributions'}`;
+                        }
+                    }
+                }
+            }
+
+            renderGrid() {
+                this.updateGridDisplay();
+            }
+        }
+
+        // Initialize the calendar when the DOM is loaded
+        document.addEventListener('DOMContentLoaded', () => {
+            window.contributionCalendar = new ContributionCalendar();
+        });
+    </script>
+</body>
+</html>
